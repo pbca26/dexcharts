@@ -20,7 +20,7 @@ class Main extends React.Component {
   }
 
   componentDidMount() {
-    this.createTView('KMD-MNZ');
+    this.createTView(config.defaultPair);
   }
 
   reinitTradingView() {
@@ -31,7 +31,7 @@ class Main extends React.Component {
   }
 
   createTView(pair) {
-    this.datafeed = new Datafeeds.UDFCompatibleDatafeed('http://46.20.235.46:8888');
+    this.datafeed = new Datafeeds.UDFCompatibleDatafeed(config.datafeedURL);
     this.widget = new TradingView.widget({
       fullscreen: true,
       symbol: pair,
