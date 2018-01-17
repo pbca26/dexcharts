@@ -2,7 +2,6 @@ const express = require('express');
 const	bodyParser = require('body-parser');
 const config = require('./config');
 const path = require('path');
-let shepherd = require('./routes/shepherd');
 let app = express();
 const datafeed = require('./datafeed.js');
 
@@ -27,12 +26,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname + '/public/index.html'));
 });
 
-app.use('/api', shepherd);
 app.use('/public', express.static(path.join(__dirname, 'public')));
-console.log(path.join(__dirname, 'public'));
 
 const server = require('http')
                 .createServer(app)
-                .listen(3333, 'localhost');
+                .listen(config.port, config.ip);
 
-// console.log(`Iquidus Omni Explorer Server is running at ${config.ip}:${config.port}`);
+console.log(`Iquidus Omni Explorer Server is running at ${config.ip}:${config.port}`);

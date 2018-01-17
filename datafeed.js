@@ -12,9 +12,10 @@ var http = require("http"),
 url = require("url"),
 symbolsDatabase = require("./symbols_database"),
 https = require("https"); // propose to remove this from both polo and coinbase
+const config = require('./config');
 
-var datafeedHost = "5.9.253.196";
-var datafeedPort = "7782";
+var datafeedHost = config.feedSourceIP;
+var datafeedPort = config.feedSourcePort;
 var defaultResponseHeader = {"Content-Type": "text/plain", 'Access-Control-Allow-Origin': '*'};
 
 function httpGet(path, callback) {
@@ -56,7 +57,7 @@ function httpGet(path, callback) {
 // propose to remove this
 function httpsGet(exchange, path, callback) {
   var options = {
-    host: "5.9.253.196:7782",
+    host: feedSourceIP + ':' + feedSourcePort,
     path: path,
     headers: {  'User-Agent': 'NodeJS server/1.0' }
   };
@@ -303,7 +304,7 @@ RequestProcessor = function(action, query, response) {
 //		/search?query=B&limit=10
 //		/history?symbol=C&from=DATE&resolution=E
 
-var firstPort = 8888;
+var firstPort = config.feedAPIPort;
 function getFreePort(callback) {
   var port = firstPort;
   firstPort++;
@@ -329,5 +330,5 @@ getFreePort(function(port) {
     new RequestProcessor(action, uri.query, response);
   }).listen(port);
 
-  console.log("Datafeed running at\n => http://localhost:" + port + "/\nCTRL + C to shutdown");
+  console.log(`Datafeed running at\n => http://${config.ip}:${firstPort}/\nCTRL + C to shutdown`);
 });

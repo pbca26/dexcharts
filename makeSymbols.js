@@ -48,5 +48,5 @@ makeSymbolsFile = () => {
 makeSymbolsFile();
 
 module.exports = {
-  coins
+  coins,
 };

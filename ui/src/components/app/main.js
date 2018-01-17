@@ -31,7 +31,7 @@ class Main extends React.Component {
   }
 
   createTView(pair) {
-    this.datafeed = new Datafeeds.UDFCompatibleDatafeed('http://localhost:8888');
+    this.datafeed = new Datafeeds.UDFCompatibleDatafeed('http://46.20.235.46:8888');
     this.widget = new TradingView.widget({
       fullscreen: true,
       symbol: pair,
@@ -101,7 +101,7 @@ class Main extends React.Component {
                 <span className="icon-bar"></span>
                 <span className="icon-bar"></span>
                 </button> */ }
-              <div className="navbar-brand">DexCharts</div>
+              <div className="navbar-brand">BarterDEX Charts</div>
             </div>
             <div className="collapse navbar-collapse" id="navbar-brand-centered">
               <ul className="nav navbar-nav">
