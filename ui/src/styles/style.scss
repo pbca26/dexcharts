@@ -1,0 +1,81 @@
+body {
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+.navbar-default {
+	background-color: #f8f8f8;
+	border-color: #e7e7e7;
+}
+
+.navbar-static-top {
+	z-index: 1000;
+	border-width: 0 0 1px;
+}
+
+.navbar {
+	position: relative;
+	min-height: 50px;
+	margin-bottom: 20px;
+	border: 1px solid #ccc;
+}
+
+.navbar-default .navbar-brand {
+	color: #777;
+}
+
+.navbar-brand {
+	float: left;
+	height: 50px;
+	padding: 15px 15px;
+	font-size: 18px;
+	line-height: 20px;
+}
+
+.Select-control {
+	height: 42px;
+}
+.Select-placeholder,
+.Select-value {
+	line-height: 38px !important;
+}
+.Select-clear-zone {
+	display: none;
+}
+.Select-menu-outer {
+	max-height: 403px;
+}
+.Select-menu {
+	max-height: 400px;
+}
+.Select-clear-zone {
+	display: none;
+}
+
+.pair-selectors {
+	margin-bottom: 20px;
+	margin-top: 34px;
+
+	.table-coin-name {
+		position: relative;
+		top: 1px;
+		left: 10px;
+	}
+	.pair-label {
+		margin-right: 20px;
+		margin-left: 15px;
+		position: relative;
+		top: -16px;
+	}
+	.pair {
+		display: inline-block;
+		width: 220px;
+	}
+	.Select.last {
+		margin-left: 20px;
+	}
+	.btn {
+		position: relative;
+		top: -17px;
+		left: 20px;
+	}
+}

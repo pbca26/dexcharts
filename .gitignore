@@ -1,0 +1,9 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+public
+
+# Ignore node.js modules folder
+node_modules
+ui/build
