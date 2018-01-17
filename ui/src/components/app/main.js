@@ -83,7 +83,7 @@ class Main extends React.Component {
         <img
           width="30"
           height="30"
-          src={ `/assets/images/${coin.value.toLowerCase()}.png`} />
+          src={ `/${config.dev ? 'assets' : 'public'}/images/${coin.value.toLowerCase()}.png`} />
         <span className="table-coin-name">{ coin.label }</span>
       </span>
     );
