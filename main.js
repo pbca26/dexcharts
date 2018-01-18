@@ -32,4 +32,4 @@ const server = require('http')
                 .createServer(app)
                 .listen(config.port, config.ip);
 
-console.log(`Iquidus Omni Explorer Server is running at ${config.ip}:${config.port}`);
+console.log(`Charts Server is running at ${config.ip}:${config.port}`);

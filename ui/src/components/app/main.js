@@ -8,8 +8,8 @@ class Main extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      base: 'KMD',
-      rel: 'MNZ',
+      base: config.defaultPair.split[0],
+      rel: config.defaultPair.split[1],
       coins: coins,
     };
     this.updateInput = this.updateInput.bind(this);
@@ -36,11 +36,11 @@ class Main extends React.Component {
       fullscreen: true,
       symbol: pair,
       //debug: true,
-      interval: 15,
+      interval: config.interval,
       container_id: 'tv_chart_container',
       //  BEWARE: no trailing slash is expected in feed URL
       datafeed: this.datafeed,
-      library_path: config.dev ? '/assets/charting_library/' : '/public/charting_library/',
+      library_path: `${config.urlPrefix}/charting_library/`,
       locale: "en",
       //  Regression Trend-related functionality is not implemented yet, so it's hidden for a while
       drawings_access: { type: 'black', tools: [ { name: 'Regression Trend' } ] },
@@ -83,7 +83,7 @@ class Main extends React.Component {
         <img
           width="30"
           height="30"
-          src={ `/${config.dev ? 'assets' : 'public'}/images/${coin.value.toLowerCase()}.png`} />
+          src={ `${config.urlPrefix}/images/${coin.value.toLowerCase()}.png` } />
         <span className="table-coin-name">{ coin.label }</span>
       </span>
     );
