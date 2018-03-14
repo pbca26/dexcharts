@@ -8,11 +8,11 @@
 	https://codeforgeek.com/2015/01/nodejs-mysql-tutorial/
 */
 
-var http = require("http"),
-url = require("url"),
-symbolsDatabase = require("./symbols_database"),
-https = require("https"); // propose to remove this from both polo and coinbase
 const config = require('./config');
+const http = require(config.https ? 'https' : 'http');
+const url = require('url');
+const symbolsDatabase = require('./symbols_database');
+const https = require('https'); // propose to remove this from both polo and coinbase
 const path = require('path');
 const fs = require('fs');
 
@@ -25,103 +25,110 @@ if (config.https) {
   };
 }
 
-var datafeedHost = config.feedSourceIP;
-var datafeedPort = config.feedSourcePort;
-var defaultResponseHeader = {"Content-Type": "text/plain", 'Access-Control-Allow-Origin': '*'};
+const datafeedHost = config.feedSourceIP;
+const datafeedPort = config.feedSourcePort;
+const defaultResponseHeader = {
+  'Content-Type': 'text/plain',
+  'Access-Control-Allow-Origin': '*',
+};
 
-function httpGet(path, callback) {
-  var options = {
-  host: datafeedHost,
-  port: datafeedPort,
-  path: path
+const httpGet = (path, callback) => {
+  const options = {
+    host: datafeedHost,
+    port: datafeedPort,
+    path: path,
   };
 
-  onDataCallback = function(response) {
-    var result = '';
+  const onDataCallback = (response) => {
+    let result = '';
 
-    response.on('data', function(chunk) {
+    response.on('data', (chunk) => {
       result += chunk
     });
 
-    response.on('end', function() {
+    response.on('end', () => {
       callback(result)
     });
   }
 
-  var req = http.request(options, onDataCallback);
-  req.on('socket', function(socket) {
+  const req = http.request(options, onDataCallback);
+
+  req.on('socket', (socket) => {
     socket.setTimeout(35000);
-    socket.on('timeout', function() {
+
+    socket.on('timeout', () => {
       console.log('timeout');
       req.abort();
     });
   });
 
-  req.on('error', function(e) {
-    console.log('Problem with request: ' + e.message);
-    //callback('');
+  req.on('error', (e) => {
+    console.log(`Problem with request: ${e.message}`);
   });
 
   req.end();
 }
 
 // propose to remove this
-function httpsGet(exchange, path, callback) {
-  var options = {
-    host: feedSourceIP + ':' + feedSourcePort,
+const httpsGet = (exchange, path, callback) => {
+  const options = {
+    host: `${feedSourceIP}:${feedSourcePort}`,
     path: path,
-    headers: {  'User-Agent': 'NodeJS server/1.0' }
+    headers: {
+      'User-Agent': 'NodeJS server/1.0',
+    },
   };
-  //console.log('Path utilized: ' + path);
 
-  onDataCallback = function(response) {
-    var result = '';
+  const onDataCallback = (response) => {
+    let result = '';
 
-    response.on('data', function(chunk) {
+    response.on('data', (chunk) => {
       result += chunk
     });
 
-    response.on('end', function() {
+    response.on('end', () => {
       callback(result)
     });
   }
 
-  var req = https.request(options, onDataCallback);
-  req.on('socket', function(socket) {
+  const req = https.request(options, onDataCallback);
+
+  req.on('socket', (socket) => {
     socket.setTimeout(35000);
-    socket.on('timeout', function() {
+
+    socket.on('timeout', () => {
       console.log('timeout');
       req.abort();
     });
   });
 
-  req.on('error', function(e) {
-    console.log('Problem with request: ' + e.message);
-    //callback('');
+  req.on('error', (e) => {
+    console.log(`Problem with request: ${e.message}`);
   });
 
   req.end();
 }
 
-function convertDataToUDFFormat(data) { // propose to alter this
-  var result = {
+const convertDataToUDFFormat = (data) => { // propose to alter this
+  const result = {
     t: [], c: [], o: [], h: [], l: [], v: [],
-    s: []
+    s: [],
   };
+  let lines;
 
   try {
-    var lines = JSON.parse(data);
+    lines = JSON.parse(data);
   } catch(e) {
     console.log('malformed request', data);
-    return '{ "error": "malformed request: ' + data + '"}';
+    return `{ "error": "malformed request: ${data} " }`;
   }
 
-  if (lines.length == 0) {
-    result.s = "no_data";
+  if (lines.length === 0) {
+    result.s = 'no_data';
   } else {
-    for (var i = 0; i < lines.length; i++) {
-      var items = lines[i];
-      result.s = "ok";
+    for (let i = 0; i < lines.length; i++) {
+      const items = lines[i];
+      result.s = 'ok';
 
       if (parseInt(items[0]) != 0) {
         result.t.push(parseInt(items[0])); // date
@@ -137,30 +144,57 @@ function convertDataToUDFFormat(data) { // propose to alter this
   return result;
 }
 
-RequestProcessor = function(action, query, response) {
-  this.sendError = function(error, response) {
+RequestProcessor = (action, query, response) => {
+  this.sendError = (error, response) => {
     response.writeHead(200, defaultResponseHeader);
     response.write("{\"s\":\"error\",\"errmsg\":\"" + error + "\"}");
     response.end();
     console.log(error);
   }
 
-  this.sendConfig = function(response) {
-    var config = {
+  this.sendConfig = (response) => {
+    const config = {
       supports_search: true,
       supports_group_request: false,
       supports_marks: false,
       supports_timescale_marks: false,
       exchanges: [
-        {value: "", name: "All Exchanges", desc: ""},
-        {value: "BARTERDEX", name: "BarterDEX", desc: "BarterDEX"},
+        {
+          value: '',
+          name: 'All Exchanges',
+          desc: '',
+        },
+        {
+          value: 'BARTERDEX',
+          name: 'BarterDEX',
+          desc: 'BarterDEX',
+        },
       ],
       symbolsTypes: [
-        {name: "All types", value: ""},
-        {name: "Barterdex", value: "barterdex"},
-        {name: "Index", value: "index"},
+        {
+          name: 'All types',
+          value: '',
+        },
+        {
+          name: 'Barterdex',
+          value: 'barterdex',
+        },
+        {
+          name: 'Index',
+          value: 'index',
+        },
       ],
-      supportedResolutions: [ "1", "5", "15", "30", "60", "120", "240", "D", "W"],
+      supportedResolutions: [
+        '1',
+        '5',
+        '15',
+        '30',
+        '60',
+        '120',
+        '240',
+        'D',
+        'W'
+      ],
     };
 
     response.writeHead(200, defaultResponseHeader);
@@ -168,71 +202,69 @@ RequestProcessor = function(action, query, response) {
     response.end();
   }
 
-  this.sendSymbolSearchResults = function(query, type, exchange, maxRecords, response) {
+  this.sendSymbolSearchResults = (query, type, exchange, maxRecords, response) => {
     if (!maxRecords) {
-      throw "wrong_query";
+      throw 'wrong_query';
     }
 
-    var result = symbolsDatabase.search(query, type, exchange, maxRecords);
+    const result = symbolsDatabase.search(query, type, exchange, maxRecords);
 
     response.writeHead(200, defaultResponseHeader);
     response.write(JSON.stringify(result));
     response.end();
   }
 
-  this.sendSymbolInfo = function(symbolName, response) {
-    var symbolInfo = symbolsDatabase.symbolInfo(symbolName);
+  this.sendSymbolInfo = (symbolName, response) => {
+    const symbolInfo = symbolsDatabase.symbolInfo(symbolName);
 
-    if (symbolInfo == null) {
-      throw "unknown_symbol " + symbolName;
+    if (symbolInfo === null) {
+      throw `unknown_symbol ${symbolName}`;
     }
 
-    var address = "";
-    var exchange = "";
+    const exchange = 'barterdex';
+    const pairArray = symbolInfo.name.split('-');
+    const address = `/api/stats/tradesarray?base=${pairArray[0]}&rel=${pairArray[1]}&starttime=0&endtime=0&timescale=60`;
 
-    var separator = '-';
-    var pairArray = symbolInfo.name.split(separator);
+    const that = this;
 
-    address = "/api/stats/tradesarray?base=" + pairArray[0] +
-      "&rel=" + pairArray[1] +
-      "&starttime=0&endtime=0&timescale=60";
-    exchange = "barterdex";
+    httpGet(address, (result) => {
+      let resultAll;
 
-    var that = this;
-
-    //console.log(datafeedHost + address);
-
-    httpGet(address, function(result) {
-      var resultAll;
       try {
         resultAll = JSON.parse(result);
       } catch(e) {}
-      var lastPrice = "";
 
-      lastPrice = '' + resultAll[0][1];
-
+      const lastPrice = resultAll[0][1];
       //	BEWARE: this `pricescale` parameter computation algorithm is wrong and works
       //	for symbols with 10-based minimal movement value only
-      var pricescale = lastPrice.indexOf('.') > 0
-        ? Math.pow(10, lastPrice.split('.')[1].length)
-        : 10;
+      const pricescale = lastPrice.indexOf('.') > 0 ? Math.pow(10, lastPrice.split('.')[1].length) : 10;
 
-      var info = {
-        "name": symbolInfo.name,
-        "exchange-traded": symbolInfo.exchange,
-        "exchange-listed": symbolInfo.exchange,
-        "timezone": "UTC",
-        "minmov": 1,
-        "minmov2": 0,
-        "pricescale": pricescale,
-        "pointvalue": 1,
-        "session": "24x7",
-        "has_intraday": true,
-        "has_no_volume": false,
-        "ticker": symbolInfo.name.toUpperCase(),
-        "description": symbolInfo.description.length > 0 ? symbolInfo.description : symbolInfo.name,
-        "type": symbolInfo.type,
-        "supported_resolutions" : [ "1", "5", "15", "30", "60", "120", "240", "D", "W"]
+      const info = {
+        'name': symbolInfo.name,
+        'exchange-traded': symbolInfo.exchange,
+        'exchange-listed': symbolInfo.exchange,
+        'timezone': 'UTC',
+        'minmov': 1,
+        'minmov2': 0,
+        'pricescale': pricescale,
+        'pointvalue': 1,
+        'session': '24x7',
+        'has_intraday': true,
+        'has_no_volume': false,
+        'ticker': symbolInfo.name.toUpperCase(),
+        'description': symbolInfo.description.length > 0 ? symbolInfo.description : symbolInfo.name,
+        'type': symbolInfo.type,
+        'supported_resolutions' : [
+          '1',
+          '5',
+          '15',
+          '30',
+          '60',
+          '120',
+          '240',
+          'D',
+          'W'
+        ],
       };
 
       response.writeHead(200, defaultResponseHeader);
@@ -241,45 +273,62 @@ RequestProcessor = function(action, query, response) {
     });
   }
 
-  this.sendSymbolHistory = function(symbol, startDateTimestamp, endDateTimestamp, resolution, response) {
-    var symbolInfo = symbolsDatabase.symbolInfo(symbol);
+  this.sendSymbolHistory = (symbol, startDateTimestamp, endDateTimestamp, resolution, response) => {
+    const symbolInfo = symbolsDatabase.symbolInfo(symbol);
 
-    if (symbolInfo == null) {
-      throw "unknown_symbol";
+    if (symbolInfo === null) {
+      throw 'unknown_symbol';
     }
 
-    if (resolution != "1" && resolution != "5" && resolution != "15" && resolution != "30" && resolution != "60" && resolution != "120" && resolution != "240" && resolution != "D" && resolution != "W") {
-      throw "Unsupported resolution: " + resolution;
+    if (resolution != '1' &&
+        resolution != '5' &&
+        resolution != '15' &&
+        resolution != '30' &&
+        resolution != '60' &&
+        resolution != '120' &&
+        resolution != '240' &&
+        resolution != 'D' &&
+        resolution != 'W') {
+      throw `Unsupported resolution: ${resolution}`;
     }
 
-    var numericalResolution = 300; // default to 5 mins
+    let numericalResolution = 300; // default to 5 mins
+
     switch (resolution) {
-      case "1": numericalResolution = 60; break;
-      case "5": numericalResolution = 300; break;
-      case "15": numericalResolution = 900; break;
-      case "30": numericalResolution = 1800; break;
-      case "60": numericalResolution = 3600; break;
-      case "120": numericalResolution = 7200; break;
-      case "240": numericalResolution = 14400; break;
-      case "D": numericalResolution = 86400; break;
-      case "W": numericalResolution = 604800; break;
+      case '1':
+        numericalResolution = 60;
+        break;
+      case '5':
+        numericalResolution = 300;
+        break;
+      case '15':
+        numericalResolution = 900;
+        break;
+      case '30':
+        numericalResolution = 1800;
+        break;
+      case '60':
+        numericalResolution = 3600;
+        break;
+      case '120':
+        numericalResolution = 7200;
+        break;
+      case '240':
+        numericalResolution = 14400;
+        break;
+      case 'D':
+        numericalResolution = 86400;
+        break;
+      case 'W':
+        numericalResolution = 604800;
+        break;
     }
 
-    //console.log(startDateTimestamp);
     startDateTimestamp = startDateTimestamp - (startDateTimestamp % numericalResolution);
-    //console.log("\n new: "+startDateTimestamp);
 
-    var separator = '-';
-    var pairArray = symbolInfo.name.split(separator);
-
-    var address = "/api/stats/tradesarray?base=" + pairArray[0] +
-      "&rel=" + pairArray[1] +
-      "&starttime=" + startDateTimestamp +
-      "&endtime=" + endDateTimestamp +
-      "&timescale=" + numericalResolution;
-    //console.log("Requesting " + address);
-
-    var that = this;
+    const pairArray = symbolInfo.name.split('-');
+    const address = `/api/stats/tradesarray?base=${pairArray[0]}&rel=${pairArray[1]}&starttime=${startDateTimestamp}&endtime=${endDateTimestamp}&timescale=${numericalResolution}`;
+    const that = this;
 
     httpGet(address, function(result) {
       response.writeHead(200, defaultResponseHeader);
@@ -289,27 +338,27 @@ RequestProcessor = function(action, query, response) {
   }
 
   try {
-    if (action == "/config") {
+    if (action === '/config') {
       this.sendConfig(response);
-    } else if (action == "/symbols" && !!query["symbol"]) {
-      this.sendSymbolInfo(query["symbol"], response);
-    } else if (action == "/search") {
-      this.sendSymbolSearchResults(query["query"], query["type"], query["exchange"], query["limit"], response);
-    } else if (action == "/history") {
-      this.sendSymbolHistory(query["symbol"], query["from"], query["to"], query["resolution"], response);
-    } else if (action == "/quotes") {
-      //this.sendQuotes(query["symbols"], response);
-    } else if (action == "/marks") {
-      //this.sendMarks(response);
-    } else if (action == "/timescale_marks") {
-      //this.sendTimescaleMarks(response);
+    } else if (action === '/symbols' && !!query['symbol']) {
+      this.sendSymbolInfo(query['symbol'], response);
+    } else if (action === '/search') {
+      this.sendSymbolSearchResults(query['query'], query['type'], query['exchange'], query['limit'], response);
+    } else if (action === '/history') {
+      this.sendSymbolHistory(query['symbol'], query['from'], query['to'], query['resolution'], response);
+    } else if (action === '/quotes') {
+      // this.sendQuotes(query['symbols'], response);
+    } else if (action === '/marks') {
+      // this.sendMarks(response);
+    } else if (action === '/timescale_marks') {
+      // this.sendTimescaleMarks(response);
     } else {
       console.log('request ', action);
 
       if (action.indexOf('/public') > -1) {
         filePath = '.' + action;
       } else {
-       filePath = './public/' + action;
+        filePath = './public/' + action;
       }
 
       if (action.indexOf('/assets') > -1) {
@@ -320,46 +369,46 @@ RequestProcessor = function(action, query, response) {
         filePath = './public/index.html';
       }
 
-      var extname = String(path.extname(filePath)).toLowerCase();
-      var contentType = 'text/html';
-      var mimeTypes = {
-          '.html': 'text/html',
-          '.js': 'text/javascript',
-          '.css': 'text/css',
-          '.json': 'application/json',
-          '.png': 'image/png',
-          '.jpg': 'image/jpg',
-          '.gif': 'image/gif',
-          '.wav': 'audio/wav',
-          '.mp4': 'video/mp4',
-          '.woff': 'application/font-woff',
-          '.ttf': 'application/font-ttf',
-          '.eot': 'application/vnd.ms-fontobject',
-          '.otf': 'application/font-otf',
-          '.svg': 'application/image/svg+xml'
+      const extname = String(path.extname(filePath)).toLowerCase();
+      const contentType = 'text/html';
+      const mimeTypes = {
+        '.html': 'text/html',
+        '.js': 'text/javascript',
+        '.css': 'text/css',
+        '.json': 'application/json',
+        '.png': 'image/png',
+        '.jpg': 'image/jpg',
+        '.gif': 'image/gif',
+        '.wav': 'audio/wav',
+        '.mp4': 'video/mp4',
+        '.woff': 'application/font-woff',
+        '.ttf': 'application/font-ttf',
+        '.eot': 'application/vnd.ms-fontobject',
+        '.otf': 'application/font-otf',
+        '.svg': 'application/image/svg+xml'
       };
 
       contentType = mimeTypes[extname] || 'application/octet-stream';
 
-      fs.readFile(filePath, function(error, content) {
-          if (error) {
-              if(error.code == 'ENOENT'){
-                  fs.readFile('./404.html', function(error, content) {
-                      response.writeHead(200, { 'Content-Type': contentType });
-                      response.end(content, 'utf-8');
-                  });
-              }
-              else {
-                  response.writeHead(500);
-                  response.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
-                  response.end();
-              }
+      fs.readFile(filePath, (error, content) => {
+        if (error) {
+          if (error.code === 'ENOENT') {
+            response.writeHead(200, { 'Content-Type': contentType });
+            response.end('wrong request', 'utf-8');
+            /*fs.readFile('./404.html', function(error, content) {
+                response.writeHead(200, { 'Content-Type': contentType });
+                response.end('wrong request', 'utf-8');
+            });*/
+          } else {
+            response.writeHead(500);
+            response.end(`Sorry, check with the site admin for error: ${error.code} ..\n`);
+            response.end();
           }
-          else {
-              response.setHeader('Access-Control-Allow-Origin', '*');
-              response.writeHead(200, { 'Content-Type': contentType });
-              response.end(content);
-          }
+        } else {
+          response.setHeader('Access-Control-Allow-Origin', '*');
+          response.writeHead(200, { 'Content-Type': contentType });
+          response.end(content);
+        }
       });
     }
   } catch (error) {
@@ -373,30 +422,39 @@ RequestProcessor = function(action, query, response) {
 //		/search?query=B&limit=10
 //		/history?symbol=C&from=DATE&resolution=E
 
-var firstPort = config.feedAPIPort;
-function getFreePort(callback) {
-  var port = firstPort;
+const firstPort = config.feedAPIPort;
 
-  var server = http.createServer();
+const getFreePort = (callback) => {
+  const port = firstPort;
+  const server = http.createServer();
 
-  server.listen(port, function (err) {
-    server.once('close', function () {
+  server.listen(port, (err) => {
+    server.once('close', () => {
       callback(port);
     });
     server.close();
   });
 
-  server.on('error', function (err) {
+  server.on('error', (err) => {
     getFreePort(callback);
   });
 }
 
-getFreePort(function(port) {
-  http.createServer(function(request, response) {
-    var uri = url.parse(request.url, true);
-    var action = uri.pathname;
-    new RequestProcessor(action, uri.query, response);
-  }, options).listen(port);
+getFreePort((port) => {
+  if (config.https) {
+    http.createServer(function(request, response) {
+      const uri = url.parse(request.url, true);
+      const action = uri.pathname;
+      new RequestProcessor(action, uri.query, response);
+    }, options).listen(port);
+  } else {
+    // non ssl
+    http.createServer(function(request, response) {
+      const uri = url.parse(request.url, true);
+      const action = uri.pathname;
+      new RequestProcessor(action, uri.query, response);
+    }).listen(port);
+  }
 
   console.log(`Datafeed running at\n => http://${config.ip}:${firstPort}/\nCTRL + C to shutdown`);
 });
