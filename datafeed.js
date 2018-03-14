@@ -1,11 +1,11 @@
 /*
-	This file is a node.js module.
+  This file is a node.js module.
 
-	This is an implementation of UDF-compatible datafeed wrapper for poloniex
-	Some algorithms may be icorrect because it's rather an UDF implementation sample
-	then a proper datafeed implementation.
+  This is an implementation of UDF-compatible datafeed wrapper for poloniex
+  Some algorithms may be icorrect because it's rather an UDF implementation sample
+  then a proper datafeed implementation.
 
-	https://codeforgeek.com/2015/01/nodejs-mysql-tutorial/
+  https://codeforgeek.com/2015/01/nodejs-mysql-tutorial/
 */
 
 const config = require('./config');
@@ -69,46 +69,6 @@ const httpGet = (path, callback) => {
   req.end();
 }
 
-// propose to remove this
-const httpsGet = (exchange, path, callback) => {
-  const options = {
-    host: `${feedSourceIP}:${feedSourcePort}`,
-    path: path,
-    headers: {
-      'User-Agent': 'NodeJS server/1.0',
-    },
-  };
-
-  const onDataCallback = (response) => {
-    let result = '';
-
-    response.on('data', (chunk) => {
-      result += chunk
-    });
-
-    response.on('end', () => {
-      callback(result)
-    });
-  }
-
-  const req = https.request(options, onDataCallback);
-
-  req.on('socket', (socket) => {
-    socket.setTimeout(35000);
-
-    socket.on('timeout', () => {
-      console.log('timeout');
-      req.abort();
-    });
-  });
-
-  req.on('error', (e) => {
-    console.log(`Problem with request: ${e.message}`);
-  });
-
-  req.end();
-}
-
 const convertDataToUDFFormat = (data) => { // propose to alter this
   const result = {
     t: [], c: [], o: [], h: [], l: [], v: [],
@@ -144,7 +104,7 @@ const convertDataToUDFFormat = (data) => { // propose to alter this
   return result;
 }
 
-RequestProcessor = (action, query, response) => {
+RequestProcessor = function(action, query, response) {
   this.sendError = (error, response) => {
     response.writeHead(200, defaultResponseHeader);
     response.write("{\"s\":\"error\",\"errmsg\":\"" + error + "\"}");
@@ -235,8 +195,8 @@ RequestProcessor = (action, query, response) => {
       } catch(e) {}
 
       const lastPrice = resultAll[0][1];
-      //	BEWARE: this `pricescale` parameter computation algorithm is wrong and works
-      //	for symbols with 10-based minimal movement value only
+      //  BEWARE: this `pricescale` parameter computation algorithm is wrong and works
+      //  for symbols with 10-based minimal movement value only
       const pricescale = lastPrice.indexOf('.') > 0 ? Math.pow(10, lastPrice.split('.')[1].length) : 10;
 
       const info = {
@@ -254,7 +214,7 @@ RequestProcessor = (action, query, response) => {
         'ticker': symbolInfo.name.toUpperCase(),
         'description': symbolInfo.description.length > 0 ? symbolInfo.description : symbolInfo.name,
         'type': symbolInfo.type,
-        'supported_resolutions' : [
+        'supported_resolutions': [
           '1',
           '5',
           '15',
@@ -330,7 +290,7 @@ RequestProcessor = (action, query, response) => {
     const address = `/api/stats/tradesarray?base=${pairArray[0]}&rel=${pairArray[1]}&starttime=${startDateTimestamp}&endtime=${endDateTimestamp}&timescale=${numericalResolution}`;
     const that = this;
 
-    httpGet(address, function(result) {
+    httpGet(address, (result) => {
       response.writeHead(200, defaultResponseHeader);
       response.write(JSON.stringify(convertDataToUDFFormat(result)));
       response.end();
@@ -370,7 +330,6 @@ RequestProcessor = (action, query, response) => {
       }
 
       const extname = String(path.extname(filePath)).toLowerCase();
-      const contentType = 'text/html';
       const mimeTypes = {
         '.html': 'text/html',
         '.js': 'text/javascript',
@@ -387,6 +346,7 @@ RequestProcessor = (action, query, response) => {
         '.otf': 'application/font-otf',
         '.svg': 'application/image/svg+xml'
       };
+      let contentType = 'text/html';
 
       contentType = mimeTypes[extname] || 'application/octet-stream';
 
@@ -416,11 +376,11 @@ RequestProcessor = (action, query, response) => {
   }
 }
 
-//	Usage:
-//		/config
-//		/symbols?symbol=A
-//		/search?query=B&limit=10
-//		/history?symbol=C&from=DATE&resolution=E
+//  Usage:
+//    /config
+//    /symbols?symbol=A
+//    /search?query=B&limit=10
+//    /history?symbol=C&from=DATE&resolution=E
 
 const firstPort = config.feedAPIPort;
 
@@ -442,14 +402,14 @@ const getFreePort = (callback) => {
 
 getFreePort((port) => {
   if (config.https) {
-    http.createServer(function(request, response) {
+    http.createServer(options, (request, response) => {
       const uri = url.parse(request.url, true);
       const action = uri.pathname;
       new RequestProcessor(action, uri.query, response);
-    }, options).listen(port);
+    }).listen(port);
   } else {
     // non ssl
-    http.createServer(function(request, response) {
+    http.createServer((request, response) => {
       const uri = url.parse(request.url, true);
       const action = uri.pathname;
       new RequestProcessor(action, uri.query, response);
