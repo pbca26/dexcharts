@@ -51,7 +51,7 @@ const httpGet = (path, callback) => {
     });
   }
 
-  const req = http.request(options, onDataCallback);
+  const req = require('http').request(options, onDataCallback);
 
   req.on('socket', (socket) => {
     socket.setTimeout(35000);
