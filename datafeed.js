@@ -13,6 +13,17 @@ url = require("url"),
 symbolsDatabase = require("./symbols_database"),
 https = require("https"); // propose to remove this from both polo and coinbase
 const config = require('./config');
+const path = require('path');
+const fs = require('fs');
+
+let options = {};
+
+if (config.https) {
+  options = {
+    key: fs.readFileSync('certs/priv.pem'),
+    cert: fs.readFileSync('certs/cert.pem'),
+  };
+}
 
 var datafeedHost = config.feedSourceIP;
 var datafeedPort = config.feedSourcePort;
@@ -40,7 +51,7 @@ function httpGet(path, callback) {
   var req = http.request(options, onDataCallback);
   req.on('socket', function(socket) {
     socket.setTimeout(35000);
-    socket.on('timeout', function() { 
+    socket.on('timeout', function() {
       console.log('timeout');
       req.abort();
     });
@@ -98,32 +109,32 @@ function convertDataToUDFFormat(data) { // propose to alter this
     s: []
   };
 
-try {
-  var lines = JSON.parse(data);
-} catch(e) {
-  console.log('malformed request', data);
-  return '{ "error": "malformed request: ' + data + '"}';
-}
+  try {
+    var lines = JSON.parse(data);
+  } catch(e) {
+    console.log('malformed request', data);
+    return '{ "error": "malformed request: ' + data + '"}';
+  }
 
-if (lines.length == 0) {
-  result.s = "no_data";
-} else {
-  for (var i = 0; i < lines.length; i++) {
-    var items = lines[i];
-    result.s = "ok";
+  if (lines.length == 0) {
+    result.s = "no_data";
+  } else {
+    for (var i = 0; i < lines.length; i++) {
+      var items = lines[i];
+      result.s = "ok";
 
-    if (parseInt(items[0]) != 0) {
-      result.t.push(parseInt(items[0])); // date
-      result.o.push(parseFloat(items[3])); // open
-      result.h.push(parseFloat(items[1])); // high
-      result.l.push(parseFloat(items[2])); // low
-      result.c.push(parseFloat(items[4])); // close
-      result.v.push(parseFloat(items[5])); // relvol or 6 basevol
+      if (parseInt(items[0]) != 0) {
+        result.t.push(parseInt(items[0])); // date
+        result.o.push(parseFloat(items[3])); // open
+        result.h.push(parseFloat(items[1])); // high
+        result.l.push(parseFloat(items[2])); // low
+        result.c.push(parseFloat(items[4])); // close
+        result.v.push(parseFloat(items[5])); // relvol or 6 basevol
+      }
     }
   }
-}
 
-return result;
+  return result;
 }
 
 RequestProcessor = function(action, query, response) {
@@ -292,6 +303,64 @@ RequestProcessor = function(action, query, response) {
       //this.sendMarks(response);
     } else if (action == "/timescale_marks") {
       //this.sendTimescaleMarks(response);
+    } else {
+      console.log('request ', action);
+
+      if (action.indexOf('/public') > -1) {
+        filePath = '.' + action;
+      } else {
+       filePath = './public/' + action;
+      }
+
+      if (action.indexOf('/assets') > -1) {
+        filePath = './public' + action;
+      }
+
+      if (action === '/') {
+        filePath = './public/index.html';
+      }
+
+      var extname = String(path.extname(filePath)).toLowerCase();
+      var contentType = 'text/html';
+      var mimeTypes = {
+          '.html': 'text/html',
+          '.js': 'text/javascript',
+          '.css': 'text/css',
+          '.json': 'application/json',
+          '.png': 'image/png',
+          '.jpg': 'image/jpg',
+          '.gif': 'image/gif',
+          '.wav': 'audio/wav',
+          '.mp4': 'video/mp4',
+          '.woff': 'application/font-woff',
+          '.ttf': 'application/font-ttf',
+          '.eot': 'application/vnd.ms-fontobject',
+          '.otf': 'application/font-otf',
+          '.svg': 'application/image/svg+xml'
+      };
+
+      contentType = mimeTypes[extname] || 'application/octet-stream';
+
+      fs.readFile(filePath, function(error, content) {
+          if (error) {
+              if(error.code == 'ENOENT'){
+                  fs.readFile('./404.html', function(error, content) {
+                      response.writeHead(200, { 'Content-Type': contentType });
+                      response.end(content, 'utf-8');
+                  });
+              }
+              else {
+                  response.writeHead(500);
+                  response.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
+                  response.end();
+              }
+          }
+          else {
+              response.setHeader('Access-Control-Allow-Origin', '*');
+              response.writeHead(200, { 'Content-Type': contentType });
+              response.end(content);
+          }
+      });
     }
   } catch (error) {
     this.sendError(error, response);
@@ -307,7 +376,6 @@ RequestProcessor = function(action, query, response) {
 var firstPort = config.feedAPIPort;
 function getFreePort(callback) {
   var port = firstPort;
-  firstPort++;
 
   var server = http.createServer();
 
@@ -328,7 +396,7 @@ getFreePort(function(port) {
     var uri = url.parse(request.url, true);
     var action = uri.pathname;
     new RequestProcessor(action, uri.query, response);
-  }).listen(port);
+  }, options).listen(port);
 
   console.log(`Datafeed running at\n => http://${config.ip}:${firstPort}/\nCTRL + C to shutdown`);
 });
