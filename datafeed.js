@@ -194,7 +194,7 @@ RequestProcessor = function(action, query, response) {
         resultAll = JSON.parse(result);
       } catch(e) {}
 
-      const lastPrice = resultAll[0][1];
+      const lastPrice = '' + resultAll[0][1];
       //  BEWARE: this `pricescale` parameter computation algorithm is wrong and works
       //  for symbols with 10-based minimal movement value only
       const pricescale = lastPrice.indexOf('.') > 0 ? Math.pow(10, lastPrice.split('.')[1].length) : 10;
@@ -313,7 +313,7 @@ RequestProcessor = function(action, query, response) {
     } else if (action === '/timescale_marks') {
       // this.sendTimescaleMarks(response);
     } else {
-      console.log('request ', action);
+      // console.log('request ', action);
 
       if (action.indexOf('/public') > -1) {
         filePath = '.' + action;
